@@ -5,9 +5,10 @@ option go_package = "./";
 import "google/protobuf/timestamp.proto";
 
 import "status.proto";
+import "tenants.proto";
 
 service StaffService {
-  rpc GetAllStaff (IdTenantRequest) returns (AllStaff) {}
+  rpc GetAllStaff (api.IdTenantRequest) returns (AllStaff) {}
   rpc GetOneStaff (IdsStaffRequest) returns (Staff) {}
   rpc CreateStaff (CreateStafRequest) returns (api.Status) {}
   rpc UpdateStaff (UpdateStafRequest) returns (api.Status) {}
@@ -49,8 +50,4 @@ message UpdateStafRequest {
 message IdsStaffRequest {
   int64 id = 1;
   int64 tenantId = 2;
-}
-
-message IdTenantRequest {
-  int64 tenantId = 1;
 }
