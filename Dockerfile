@@ -1,4 +1,4 @@
-FROM golang:alpine3.19 as builder
+FROM golang:alpine3.19 AS builder
 
 WORKDIR /app
 
@@ -14,14 +14,14 @@ ENV CGO_ENABLED=0
 ENV GOOS=linux
 ENV GOARCH=amd64
 
-RUN go build -ldflags="-w -s" -gcflags="all=-N -l" -tags production -trimpath -o /messenger
+RUN go build -ldflags="-w -s" -gcflags="all=-N -l" -tags production -trimpath -o /onRunCRM
 
 FROM scratch
 
 WORKDIR /app
 
-COPY --from=builder /messenger /messenger
+COPY --from=builder /onRunCRM /onRunCRM
 
 EXPOSE 8081
 
-CMD ["/messenger"]
+CMD ["/onRunCRM"]
