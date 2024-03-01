@@ -16,7 +16,7 @@ service StaffService {
 }
 
 message Staff {
-  int64 id = 1;
+  string id = 1;
   string name = 2;
   string email = 3;
   string position = 4;

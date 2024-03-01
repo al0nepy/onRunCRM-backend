@@ -16,7 +16,7 @@ service ProductsService {
 }
 
 message Products {
-  int64 id = 1;
+  string id = 1;
   int64 tenantId = 2;
   string name = 3;
   optional string description = 4;
