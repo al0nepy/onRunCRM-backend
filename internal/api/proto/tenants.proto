@@ -1,0 +1,38 @@
+syntax = "proto3";
+package api;
+option go_package = "./";
+
+import "google/protobuf/timestamp.proto";
+
+import "status.proto";
+
+service TenantsService {
+  rpc CreateTenants (CreateTenantsRequest) returns (api.Status) {}
+  rpc UpdateTenants (UpdateTenantsRequest) returns (api.Status) {}
+  rpc DeleteTenants (IdTenantsRequest) returns (api.Status) {}
+}
+
+message Tenants {
+  string id = 1;
+  string name = 2;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message CreateTenantsRequest {
+  string name = 1;
+}
+
+message UpdateTenantsRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message IdTenantsRequest {
+  int64 id = 1;
+}
+
+message IdTenantRequest {
+  int64 tenantId = 1;
+}
+
