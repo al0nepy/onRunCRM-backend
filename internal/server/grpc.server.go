@@ -4,6 +4,8 @@ import (
 	"log"
 	"net"
 
+	"go.onRunCRM/internal/handler"
+	pb "go.onRunCRM/pkg/api"
 	"google.golang.org/grpc"
 )
 
@@ -17,8 +19,13 @@ func RunGRPCServer() {
 	}
 
 	grpcServer := grpc.NewServer()
+	tenantServer := &handler.TenantHandlerServer{}
+
+	pb.RegisterTenantsServiceServer(grpcServer, tenantServer)
 
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
+
+	log.Printf("Success run")
 }
