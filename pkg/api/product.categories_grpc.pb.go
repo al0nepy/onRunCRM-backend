@@ -28,7 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProductCategoriesClient interface {
-	GetAllCategories(ctx context.Context, in *AllCategoriesRequest, opts ...grpc.CallOption) (*AllCategories, error)
+	GetAllCategories(ctx context.Context, in *AllCategoriesRequest, opts ...grpc.CallOption) (ProductCategories_GetAllCategoriesClient, error)
 	CreateCategories(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*Status, error)
 	DeleteCategories(ctx context.Context, in *DeleteCategoryRequest, opts ...grpc.CallOption) (*Status, error)
 }
@@ -41,13 +41,36 @@ func NewProductCategoriesClient(cc grpc.ClientConnInterface) ProductCategoriesCl
 	return &productCategoriesClient{cc}
 }
 
-func (c *productCategoriesClient) GetAllCategories(ctx context.Context, in *AllCategoriesRequest, opts ...grpc.CallOption) (*AllCategories, error) {
-	out := new(AllCategories)
-	err := c.cc.Invoke(ctx, ProductCategories_GetAllCategories_FullMethodName, in, out, opts...)
+func (c *productCategoriesClient) GetAllCategories(ctx context.Context, in *AllCategoriesRequest, opts ...grpc.CallOption) (ProductCategories_GetAllCategoriesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProductCategories_ServiceDesc.Streams[0], ProductCategories_GetAllCategories_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &productCategoriesGetAllCategoriesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ProductCategories_GetAllCategoriesClient interface {
+	Recv() (*AllCategories, error)
+	grpc.ClientStream
+}
+
+type productCategoriesGetAllCategoriesClient struct {
+	grpc.ClientStream
+}
+
+func (x *productCategoriesGetAllCategoriesClient) Recv() (*AllCategories, error) {
+	m := new(AllCategories)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *productCategoriesClient) CreateCategories(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*Status, error) {
@@ -72,7 +95,7 @@ func (c *productCategoriesClient) DeleteCategories(ctx context.Context, in *Dele
 // All implementations must embed UnimplementedProductCategoriesServer
 // for forward compatibility
 type ProductCategoriesServer interface {
-	GetAllCategories(context.Context, *AllCategoriesRequest) (*AllCategories, error)
+	GetAllCategories(*AllCategoriesRequest, ProductCategories_GetAllCategoriesServer) error
 	CreateCategories(context.Context, *CreateCategoryRequest) (*Status, error)
 	DeleteCategories(context.Context, *DeleteCategoryRequest) (*Status, error)
 	mustEmbedUnimplementedProductCategoriesServer()
@@ -82,8 +105,8 @@ type ProductCategoriesServer interface {
 type UnimplementedProductCategoriesServer struct {
 }
 
-func (UnimplementedProductCategoriesServer) GetAllCategories(context.Context, *AllCategoriesRequest) (*AllCategories, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllCategories not implemented")
+func (UnimplementedProductCategoriesServer) GetAllCategories(*AllCategoriesRequest, ProductCategories_GetAllCategoriesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetAllCategories not implemented")
 }
 func (UnimplementedProductCategoriesServer) CreateCategories(context.Context, *CreateCategoryRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCategories not implemented")
@@ -104,22 +127,25 @@ func RegisterProductCategoriesServer(s grpc.ServiceRegistrar, srv ProductCategor
 	s.RegisterService(&ProductCategories_ServiceDesc, srv)
 }
 
-func _ProductCategories_GetAllCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AllCategoriesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _ProductCategories_GetAllCategories_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AllCategoriesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(ProductCategoriesServer).GetAllCategories(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ProductCategories_GetAllCategories_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProductCategoriesServer).GetAllCategories(ctx, req.(*AllCategoriesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(ProductCategoriesServer).GetAllCategories(m, &productCategoriesGetAllCategoriesServer{stream})
+}
+
+type ProductCategories_GetAllCategoriesServer interface {
+	Send(*AllCategories) error
+	grpc.ServerStream
+}
+
+type productCategoriesGetAllCategoriesServer struct {
+	grpc.ServerStream
+}
+
+func (x *productCategoriesGetAllCategoriesServer) Send(m *AllCategories) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _ProductCategories_CreateCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -166,10 +192,6 @@ var ProductCategories_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ProductCategoriesServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetAllCategories",
-			Handler:    _ProductCategories_GetAllCategories_Handler,
-		},
-		{
 			MethodName: "CreateCategories",
 			Handler:    _ProductCategories_CreateCategories_Handler,
 		},
@@ -178,6 +200,12 @@ var ProductCategories_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProductCategories_DeleteCategories_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetAllCategories",
+			Handler:       _ProductCategories_GetAllCategories_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "product.categories.proto",
 }

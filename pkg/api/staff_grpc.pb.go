@@ -30,10 +30,10 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StaffServiceClient interface {
-	GetAllStaff(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (*AllStaff, error)
+	GetAllStaff(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (StaffService_GetAllStaffClient, error)
 	GetOneStaff(ctx context.Context, in *IdsStaffRequest, opts ...grpc.CallOption) (*Staff, error)
-	CreateStaff(ctx context.Context, in *CreateStafRequest, opts ...grpc.CallOption) (*Status, error)
-	UpdateStaff(ctx context.Context, in *UpdateStafRequest, opts ...grpc.CallOption) (*Status, error)
+	CreateStaff(ctx context.Context, in *CUStaffRequest, opts ...grpc.CallOption) (*Status, error)
+	UpdateStaff(ctx context.Context, in *CUStaffRequest, opts ...grpc.CallOption) (*Status, error)
 	DeleteStaff(ctx context.Context, in *IdsStaffRequest, opts ...grpc.CallOption) (*Status, error)
 }
 
@@ -45,13 +45,36 @@ func NewStaffServiceClient(cc grpc.ClientConnInterface) StaffServiceClient {
 	return &staffServiceClient{cc}
 }
 
-func (c *staffServiceClient) GetAllStaff(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (*AllStaff, error) {
-	out := new(AllStaff)
-	err := c.cc.Invoke(ctx, StaffService_GetAllStaff_FullMethodName, in, out, opts...)
+func (c *staffServiceClient) GetAllStaff(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (StaffService_GetAllStaffClient, error) {
+	stream, err := c.cc.NewStream(ctx, &StaffService_ServiceDesc.Streams[0], StaffService_GetAllStaff_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &staffServiceGetAllStaffClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type StaffService_GetAllStaffClient interface {
+	Recv() (*Staff, error)
+	grpc.ClientStream
+}
+
+type staffServiceGetAllStaffClient struct {
+	grpc.ClientStream
+}
+
+func (x *staffServiceGetAllStaffClient) Recv() (*Staff, error) {
+	m := new(Staff)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *staffServiceClient) GetOneStaff(ctx context.Context, in *IdsStaffRequest, opts ...grpc.CallOption) (*Staff, error) {
@@ -63,7 +86,7 @@ func (c *staffServiceClient) GetOneStaff(ctx context.Context, in *IdsStaffReques
 	return out, nil
 }
 
-func (c *staffServiceClient) CreateStaff(ctx context.Context, in *CreateStafRequest, opts ...grpc.CallOption) (*Status, error) {
+func (c *staffServiceClient) CreateStaff(ctx context.Context, in *CUStaffRequest, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
 	err := c.cc.Invoke(ctx, StaffService_CreateStaff_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -72,7 +95,7 @@ func (c *staffServiceClient) CreateStaff(ctx context.Context, in *CreateStafRequ
 	return out, nil
 }
 
-func (c *staffServiceClient) UpdateStaff(ctx context.Context, in *UpdateStafRequest, opts ...grpc.CallOption) (*Status, error) {
+func (c *staffServiceClient) UpdateStaff(ctx context.Context, in *CUStaffRequest, opts ...grpc.CallOption) (*Status, error) {
 	out := new(Status)
 	err := c.cc.Invoke(ctx, StaffService_UpdateStaff_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -94,10 +117,10 @@ func (c *staffServiceClient) DeleteStaff(ctx context.Context, in *IdsStaffReques
 // All implementations must embed UnimplementedStaffServiceServer
 // for forward compatibility
 type StaffServiceServer interface {
-	GetAllStaff(context.Context, *IdTenantRequest) (*AllStaff, error)
+	GetAllStaff(*IdTenantRequest, StaffService_GetAllStaffServer) error
 	GetOneStaff(context.Context, *IdsStaffRequest) (*Staff, error)
-	CreateStaff(context.Context, *CreateStafRequest) (*Status, error)
-	UpdateStaff(context.Context, *UpdateStafRequest) (*Status, error)
+	CreateStaff(context.Context, *CUStaffRequest) (*Status, error)
+	UpdateStaff(context.Context, *CUStaffRequest) (*Status, error)
 	DeleteStaff(context.Context, *IdsStaffRequest) (*Status, error)
 	mustEmbedUnimplementedStaffServiceServer()
 }
@@ -106,16 +129,16 @@ type StaffServiceServer interface {
 type UnimplementedStaffServiceServer struct {
 }
 
-func (UnimplementedStaffServiceServer) GetAllStaff(context.Context, *IdTenantRequest) (*AllStaff, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllStaff not implemented")
+func (UnimplementedStaffServiceServer) GetAllStaff(*IdTenantRequest, StaffService_GetAllStaffServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetAllStaff not implemented")
 }
 func (UnimplementedStaffServiceServer) GetOneStaff(context.Context, *IdsStaffRequest) (*Staff, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOneStaff not implemented")
 }
-func (UnimplementedStaffServiceServer) CreateStaff(context.Context, *CreateStafRequest) (*Status, error) {
+func (UnimplementedStaffServiceServer) CreateStaff(context.Context, *CUStaffRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateStaff not implemented")
 }
-func (UnimplementedStaffServiceServer) UpdateStaff(context.Context, *UpdateStafRequest) (*Status, error) {
+func (UnimplementedStaffServiceServer) UpdateStaff(context.Context, *CUStaffRequest) (*Status, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateStaff not implemented")
 }
 func (UnimplementedStaffServiceServer) DeleteStaff(context.Context, *IdsStaffRequest) (*Status, error) {
@@ -134,22 +157,25 @@ func RegisterStaffServiceServer(s grpc.ServiceRegistrar, srv StaffServiceServer)
 	s.RegisterService(&StaffService_ServiceDesc, srv)
 }
 
-func _StaffService_GetAllStaff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IdTenantRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _StaffService_GetAllStaff_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(IdTenantRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(StaffServiceServer).GetAllStaff(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: StaffService_GetAllStaff_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StaffServiceServer).GetAllStaff(ctx, req.(*IdTenantRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(StaffServiceServer).GetAllStaff(m, &staffServiceGetAllStaffServer{stream})
+}
+
+type StaffService_GetAllStaffServer interface {
+	Send(*Staff) error
+	grpc.ServerStream
+}
+
+type staffServiceGetAllStaffServer struct {
+	grpc.ServerStream
+}
+
+func (x *staffServiceGetAllStaffServer) Send(m *Staff) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _StaffService_GetOneStaff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -171,7 +197,7 @@ func _StaffService_GetOneStaff_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _StaffService_CreateStaff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateStafRequest)
+	in := new(CUStaffRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -183,13 +209,13 @@ func _StaffService_CreateStaff_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: StaffService_CreateStaff_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StaffServiceServer).CreateStaff(ctx, req.(*CreateStafRequest))
+		return srv.(StaffServiceServer).CreateStaff(ctx, req.(*CUStaffRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _StaffService_UpdateStaff_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateStafRequest)
+	in := new(CUStaffRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -201,7 +227,7 @@ func _StaffService_UpdateStaff_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: StaffService_UpdateStaff_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StaffServiceServer).UpdateStaff(ctx, req.(*UpdateStafRequest))
+		return srv.(StaffServiceServer).UpdateStaff(ctx, req.(*CUStaffRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -232,10 +258,6 @@ var StaffService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*StaffServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetAllStaff",
-			Handler:    _StaffService_GetAllStaff_Handler,
-		},
-		{
 			MethodName: "GetOneStaff",
 			Handler:    _StaffService_GetOneStaff_Handler,
 		},
@@ -252,6 +274,12 @@ var StaffService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _StaffService_DeleteStaff_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetAllStaff",
+			Handler:       _StaffService_GetAllStaff_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "staff.proto",
 }

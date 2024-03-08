@@ -26,3 +26,7 @@ run: build
 clean:
 	@echo "Cleaning $(BINARY_NAME)"
 	rm -f $(BINARY_NAME)
+
+proto:
+	@echo "Generating proto files"
+	protoc --proto_path=internal/api/proto --go_out=pkg/api --go-grpc_out=pkg/api internal/api/proto/*.proto

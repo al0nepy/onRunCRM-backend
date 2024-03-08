@@ -30,7 +30,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProductsServiceClient interface {
-	GetAllProducts(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (*AllProducts, error)
+	GetAllProducts(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (ProductsService_GetAllProductsClient, error)
 	GetProducts(ctx context.Context, in *IdProductsRequest, opts ...grpc.CallOption) (*Products, error)
 	CreateProducts(ctx context.Context, in *CreateProductsRequest, opts ...grpc.CallOption) (*Status, error)
 	UpdateProducts(ctx context.Context, in *UpdateProductsRequest, opts ...grpc.CallOption) (*Status, error)
@@ -45,13 +45,36 @@ func NewProductsServiceClient(cc grpc.ClientConnInterface) ProductsServiceClient
 	return &productsServiceClient{cc}
 }
 
-func (c *productsServiceClient) GetAllProducts(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (*AllProducts, error) {
-	out := new(AllProducts)
-	err := c.cc.Invoke(ctx, ProductsService_GetAllProducts_FullMethodName, in, out, opts...)
+func (c *productsServiceClient) GetAllProducts(ctx context.Context, in *IdTenantRequest, opts ...grpc.CallOption) (ProductsService_GetAllProductsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ProductsService_ServiceDesc.Streams[0], ProductsService_GetAllProducts_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &productsServiceGetAllProductsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ProductsService_GetAllProductsClient interface {
+	Recv() (*AllProducts, error)
+	grpc.ClientStream
+}
+
+type productsServiceGetAllProductsClient struct {
+	grpc.ClientStream
+}
+
+func (x *productsServiceGetAllProductsClient) Recv() (*AllProducts, error) {
+	m := new(AllProducts)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *productsServiceClient) GetProducts(ctx context.Context, in *IdProductsRequest, opts ...grpc.CallOption) (*Products, error) {
@@ -94,7 +117,7 @@ func (c *productsServiceClient) DeleteProducts(ctx context.Context, in *IdProduc
 // All implementations must embed UnimplementedProductsServiceServer
 // for forward compatibility
 type ProductsServiceServer interface {
-	GetAllProducts(context.Context, *IdTenantRequest) (*AllProducts, error)
+	GetAllProducts(*IdTenantRequest, ProductsService_GetAllProductsServer) error
 	GetProducts(context.Context, *IdProductsRequest) (*Products, error)
 	CreateProducts(context.Context, *CreateProductsRequest) (*Status, error)
 	UpdateProducts(context.Context, *UpdateProductsRequest) (*Status, error)
@@ -106,8 +129,8 @@ type ProductsServiceServer interface {
 type UnimplementedProductsServiceServer struct {
 }
 
-func (UnimplementedProductsServiceServer) GetAllProducts(context.Context, *IdTenantRequest) (*AllProducts, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllProducts not implemented")
+func (UnimplementedProductsServiceServer) GetAllProducts(*IdTenantRequest, ProductsService_GetAllProductsServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetAllProducts not implemented")
 }
 func (UnimplementedProductsServiceServer) GetProducts(context.Context, *IdProductsRequest) (*Products, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProducts not implemented")
@@ -134,22 +157,25 @@ func RegisterProductsServiceServer(s grpc.ServiceRegistrar, srv ProductsServiceS
 	s.RegisterService(&ProductsService_ServiceDesc, srv)
 }
 
-func _ProductsService_GetAllProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IdTenantRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _ProductsService_GetAllProducts_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(IdTenantRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(ProductsServiceServer).GetAllProducts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ProductsService_GetAllProducts_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProductsServiceServer).GetAllProducts(ctx, req.(*IdTenantRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(ProductsServiceServer).GetAllProducts(m, &productsServiceGetAllProductsServer{stream})
+}
+
+type ProductsService_GetAllProductsServer interface {
+	Send(*AllProducts) error
+	grpc.ServerStream
+}
+
+type productsServiceGetAllProductsServer struct {
+	grpc.ServerStream
+}
+
+func (x *productsServiceGetAllProductsServer) Send(m *AllProducts) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _ProductsService_GetProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -232,10 +258,6 @@ var ProductsService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ProductsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetAllProducts",
-			Handler:    _ProductsService_GetAllProducts_Handler,
-		},
-		{
 			MethodName: "GetProducts",
 			Handler:    _ProductsService_GetProducts_Handler,
 		},
@@ -252,6 +274,12 @@ var ProductsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProductsService_DeleteProducts_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetAllProducts",
+			Handler:       _ProductsService_GetAllProducts_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "products.proto",
 }
