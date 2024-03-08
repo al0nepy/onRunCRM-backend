@@ -8,10 +8,10 @@ import "status.proto";
 import "tenants.proto";
 
 service StaffService {
-  rpc GetAllStaff (api.IdTenantRequest) returns (AllStaff) {}
+  rpc GetAllStaff (api.IdTenantRequest) returns (stream Staff) {}
   rpc GetOneStaff (IdsStaffRequest) returns (Staff) {}
-  rpc CreateStaff (CreateStafRequest) returns (api.Status) {}
-  rpc UpdateStaff (UpdateStafRequest) returns (api.Status) {}
+  rpc CreateStaff (CUStaffRequest) returns (api.Status) {}
+  rpc UpdateStaff (CUStaffRequest) returns (api.Status) {}
   rpc DeleteStaff (IdsStaffRequest) returns (api.Status) {}
 }
 
@@ -21,33 +21,26 @@ message Staff {
   string email = 3;
   string position = 4;
   string department = 5;
-  int64 tenantId = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
+  string tenantId = 6;
+  float  selary = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
 }
 
 message AllStaff {
   repeated Staff staff = 1;
 }
 
-message CreateStafRequest {
-  string name = 1;
-  string email = 2;
-  string position = 3;
-  string department = 4;
-  int64 tenantId = 5;
-}
-
-message UpdateStafRequest {
-  int64 id = 1;
+message CUStaffRequest {
+  optional string id = 1;
   string name = 2;
   string email = 3;
   string position = 4;
   string department = 5;
-  int64 tenantId = 6;
+  string tenantId = 6;
 }
 
 message IdsStaffRequest {
-  int64 id = 1;
-  int64 tenantId = 2;
+  string id = 1;
+  string tenantId = 2;
 }

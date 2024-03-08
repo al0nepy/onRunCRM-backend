@@ -8,7 +8,7 @@ import "status.proto";
 import "tenants.proto";
 
 service ProductsService {
-  rpc GetAllProducts (api.IdTenantRequest) returns (AllProducts) {}
+  rpc GetAllProducts (api.IdTenantRequest) returns (stream AllProducts) {}
   rpc GetProducts (IdProductsRequest) returns (Products) {}
   rpc CreateProducts (CreateProductsRequest) returns (api.Status) {}
   rpc UpdateProducts (UpdateProductsRequest) returns (api.Status) {}
@@ -17,7 +17,7 @@ service ProductsService {
 
 message Products {
   string id = 1;
-  int64 tenantId = 2;
+  string tenantId = 2;
   string name = 3;
   optional string description = 4;
   double price = 5;
@@ -33,27 +33,27 @@ message AllProducts {
 }
 
 message IdProductsRequest {
-  int64 id = 1;
-  int64 tenantId = 2;
+  string id = 1;
+  string tenantId = 2;
 }
 
 message CreateProductsRequest {
-  int64 tenantId = 1;
+  string tenantId = 1;
   string name = 2;
   optional string description = 3;
   double price = 4;
   int64 quantity = 5;
-  int64 category = 6;
+  string category = 6;
   map<string, string> attributes = 7;
 }
 
 message UpdateProductsRequest {
-  int64 id = 1;
-  int64 tenantId = 2;
+  string id = 1;
+  string tenantId = 2;
   string name = 3;
   optional string description = 4;
   double price = 5;
   int64 quantity = 6;
-  int64 category = 7;
+  string category = 7;
   map<string, string> attributes = 8;
 }
